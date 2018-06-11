@@ -69,11 +69,23 @@ esac
 #       by the writer of this script.
 IMAGE_NAME='alehaa/debian-systemd'
 IMAGE_TAG='stretch'
+IMAGE_ARCH=''
 IMAGE_PUSH=1
 
-while getopts hln:t: OPT
+while getopts a:hln:t: OPT
 do
     case $OPT in
+        a)
+            # Translate the architecture to the related image repository, which
+            # has the specific Debian image for this architecture.
+            case $OPTARG in
+                'arm')   IMAGE_ARCH='arm32v7' ;;
+                'arm64') IMAGE_ARCH='arm64v8' ;;
+
+                *) IMAGE_ARCH=$OPTARG ;;
+            esac
+        ;;
+
         l) IMAGE_PUSH=0       ;;
         n) IMAGE_NAME=$OPTARG ;;
         t) IMAGE_TAG=$OPTARG  ;;
@@ -81,6 +93,7 @@ do
         h)
             echo "Usage: $0 [-h] [-l] [-n NAME] [-t TAG]"
             echo ""
+            echo "  -a ARCH   The architecture to be built"
             echo "  -h        Give this help list"
             echo "  -l        Just build the image, don't push to the registry"
             echo "  -n NAME   The image name to be built"
@@ -111,6 +124,7 @@ docker build                       \
     -t $IMAGE                      \
     --squash                       \
     --build-arg RELEASE=$IMAGE_TAG \
+    $([ -n "$IMAGE_ARCH" ] && echo "--build-arg BASEIMG=$IMAGE_ARCH/debian") \
     .
 
 
